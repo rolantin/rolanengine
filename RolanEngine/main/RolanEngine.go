@@ -93,6 +93,6 @@ func makeVAO(points []float32) uint32{
 	gl.BindBuffer(gl.ARRAY_BUFFER,vbo)
 	gl.VertexAttribPointer(0,3,gl.FLOAT,false,0,nil)
 
-	return vao
+	return vao  //
 }
 
