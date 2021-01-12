@@ -19,10 +19,11 @@ func main()  {
 	b, err := ioutil.ReadAll(file)
 	//fmt.Print(string(b))
 	tracer := string(b)
-
+	//comma的意思是从字符串tracer查找第一个 #ifdef FRAGMENT，然后返回他的位置，这里的每个中文是占3个字符，从0开始计算，那么#ifdef FRAGMENT的位置就是12
 	comma := strings.Index(tracer, "#ifdef FRAGMENT")
 	//pos := strings.Index(string(b)[comma:], "#ifdef FRAGMENT")
-	fmt.Println(tracer[comma:])
+	fmt.Println(tracer[comma:] + " + \"\x00\"")
+
 	//tracer[comma:]这个是的意思截取字符串tracer，从12开始，包括12
 }
 
