@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// ShaderSource vs ps 文本 与 vs ps 路径
 type ShaderSource struct {
 	VertexShader string
 	FragmentShader string
@@ -49,15 +50,19 @@ func ClipShaderLab(path string){
 	Shaderlink.FragmentShader = tracer[comma:]
 }
 
-func ShaderPath(){
-	basePath:= "RolanEngine/shader/"
-	Shaderlink.VsPath = basePath + "Unlit.vs.glsl"
-	Shaderlink.PsPath = basePath + "Unlit.ps.glsl"
+// ShaderPath 用于定义shader加载路径
+func ShaderPath(shaderName string){
+	basePath:= "RolanEngine/shader/shaderType/"
+	shaderVSName:= shaderName + ".vs.glsl"
+	shaderPSName:= shaderName + ".ps.glsl"
+	Shaderlink.VsPath = basePath + shaderVSName
+	Shaderlink.PsPath = basePath + shaderPSName
+	ReadShaderLab(Shaderlink.VsPath,Shaderlink.PsPath)
 }
 
-func ShaderLoad(){
-	ShaderPath()
-	ReadShaderLab(Shaderlink.VsPath,Shaderlink.PsPath)
+// ShaderLoad 加载shader相关的所有项
+func ShaderLoad(shaderName string){
+	ShaderPath(shaderName)
 }
 
 

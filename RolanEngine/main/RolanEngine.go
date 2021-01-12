@@ -20,7 +20,7 @@ const (
 
 func main() {
 
-	shader.ShaderLoad()
+	shader.ShaderLoad("Unlit")
 
 	//LockOSThread() 这能确保我们总是在操作系统的同一个线程中运行代码，这对 GLFW 来说很重要
 	runtime.LockOSThread()
