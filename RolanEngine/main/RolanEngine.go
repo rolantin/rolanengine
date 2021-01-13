@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/g3n/RolanEngine/baseMesh"
+	"github.com/g3n/RolanEngine/config"
 	shader "github.com/g3n/RolanEngine/shader/shaderManager"
 	"github.com/g3n/threeParty/gl/v4.6-core/gl"
 	"github.com/g3n/threeParty/glfw"
@@ -12,22 +13,14 @@ import (
 )
 
 var meshdata baseMesh.RoBaseMesh
-
-const (
-	width  = 1024
-	height = 768
-)
+var window *glfw.Window
 
 func main() {
-
 	shader.ShaderLoad("Unlit")
+	runtime.LockOSThread() //LockOSThread() 这能确保我们总是在操作系统的同一个线程中运行代码，这对 GLFW 来说很重要
+	window = initGlfw() //接下来我们调用 initGlfw 来获得一个窗口的引用
 
-	//LockOSThread() 这能确保我们总是在操作系统的同一个线程中运行代码，这对 GLFW 来说很重要
-	runtime.LockOSThread()
-	//接下来我们调用 initGlfw 来获得一个窗口的引用
-	window := initGlfw()
-	//并且推迟（defer）其终止
-	defer glfw.Terminate()
+	defer glfw.Terminate() //并且推迟（defer）其终止
 	program := initOpenGL()
 
 	meshdata:=new(baseMesh.RoBaseMesh)
@@ -37,12 +30,17 @@ func main() {
 
 	vao:=makeVAO(meshdata.CreateTriangle())
 
-
 	//窗口的引用会被用在一个 for 循环中，只要窗口处于打开的状态，就执行某些事情。
 	for !window.ShouldClose() {
 		//draw(window, program)
 		draw(vao,window, program)
+		update()
 	}
+}
+
+
+func update(){
+    fmt.Println("xxx")
 }
 
 func initGlfw() *glfw.Window {
@@ -55,7 +53,7 @@ func initGlfw() *glfw.Window {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	//create window
-	win, err := glfw.CreateWindow(width, height, "RolanEngine", nil, nil)
+	win, err := glfw.CreateWindow( config.WindowWidth , config.WindowHeight, "RolanEngine", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -84,7 +82,6 @@ func initOpenGL() uint32 {
 	if err != nil {
 		panic(err)
 	}
-
 
 	var prog uint32 = gl.CreateProgram()
 
@@ -128,26 +125,29 @@ func makeVAO(points []float32) uint32{
 	gl.EnableVertexAttribArray(0)
 	gl.BindBuffer(gl.ARRAY_BUFFER,vbo)
 	gl.VertexAttribPointer(0,3,gl.FLOAT,false,0,nil)
-
 	return vao  //
 }
 
-
-func compileShader(source string, shaderType uint32) (uint32, error) {
-	shader := gl.CreateShader(shaderType)
-	csources, free := gl.Strs(source)
-	gl.ShaderSource(shader, 1, csources, nil)
-	free()
-	gl.CompileShader(shader)
+// compileShader 检查编译shader是否通过
+func compileShader(shaderSourceCode string, shaderType uint32) (uint32, error) {
+	//create shader obj
+	shaderObj := gl.CreateShader(shaderType)//****************
+    //Strs获取Go字符串列表（带或不带null终止）并返回它们的C对应项。一旦使用完字符串，就必须调用返回的free函数以释放内存。如果没有提供字符串作为参数，此函数将死机
+	csources, free := gl.Strs(shaderSourceCode)
+	gl.ShaderSource(shaderObj, 1, csources, nil)//****************
+	free() //调用返回的free函数以释放内存
+    //编译shader
+	gl.CompileShader(shaderObj)//****************
 	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
+	//从shader对象返回参数
+	gl.GetShaderiv(shaderObj, gl.COMPILE_STATUS, &status)
 	if status == gl.FALSE {
 		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
+		gl.GetShaderiv(shaderObj, gl.INFO_LOG_LENGTH, &logLength)
 		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
-		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
+		gl.GetShaderInfoLog(shaderObj, logLength, nil, gl.Str(log))
+		return 0, fmt.Errorf("failed to compile %v: %v", shaderSourceCode, log)
 	}
-	return shader, nil
+	return shaderObj, nil
 }
 

@@ -29,6 +29,9 @@ func ReadShaderLab(VSpath string,PSpath string){
 	//// 使用ioutil读取文件所有内容
 	vs, err := ioutil.ReadAll(vsfile)
 	ps, err := ioutil.ReadAll(psfile)
+	//指针使用
+	 //p:= &Shaderlink.VsPath
+	 //*p = "x"
 	Shaderlink.VertexShader = string(vs) + "\x00"
 	Shaderlink.FragmentShader = string(ps) + "\x00"
 }
@@ -55,6 +58,10 @@ func ShaderPath(shaderName string){
 	basePath:= "RolanEngine/shader/shaderType/"
 	shaderVSName:= shaderName + ".vs.glsl"
 	shaderPSName:= shaderName + ".ps.glsl"
+
+	vsP:= &Shaderlink.VsPath
+	*vsP =  basePath + shaderVSName
+
 	Shaderlink.VsPath = basePath + shaderVSName
 	Shaderlink.PsPath = basePath + shaderPSName
 	ReadShaderLab(Shaderlink.VsPath,Shaderlink.PsPath)
