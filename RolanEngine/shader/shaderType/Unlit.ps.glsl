@@ -1,5 +1,8 @@
 #version 410
-out vec4 frag_colour;
-void main() {
-    frag_colour = vec4(0, 1, 1, 1);
+// Output data
+out vec3 color;
+in vec3 customColor;
+void main(){
+    // Output color = red
+    color = customColor;//vec3(1,0,0);
 }

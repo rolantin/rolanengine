@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/g3n/RolanEngine/baseMesh"
 	"github.com/g3n/RolanEngine/config"
+	m "github.com/g3n/RolanEngine/math32"
 	shader "github.com/g3n/RolanEngine/shader/shaderManager"
 	"github.com/g3n/threeParty/gl/v4.6-core/gl"
 	"github.com/g3n/threeParty/glfw"
@@ -15,6 +16,7 @@ import (
 var meshdata baseMesh.RoBaseMesh
 var window *glfw.Window
 
+
 func main() {
 	shader.ShaderLoad("Unlit")
 	runtime.LockOSThread() //LockOSThread() 这能确保我们总是在操作系统的同一个线程中运行代码，这对 GLFW 来说很重要
@@ -23,6 +25,10 @@ func main() {
 	defer glfw.Terminate() //并且推迟（defer）其终止
 	program := initOpenGL()
 
+	// Get a handle for our "MVP" uniform
+	MatrixID := gl.GetUniformLocation(program,gl.Str("MVP"+"\x00"))
+	println(MatrixID)
+
 	meshdata:=new(baseMesh.RoBaseMesh)
 	meshdata.CreateTriangle()
 	log.Println("triangle data",meshdata.CreateTriangle())
@@ -30,17 +36,36 @@ func main() {
 
 	vao:=makeVAO(meshdata.CreateTriangle())
 
+	//look at data
+	cameraPos:= m.NewVector3(4.0,3.0,3.0)
+	LookAtOrigin := m.NewVector3(0.0,0.0,0.0)
+	HeadisUp := m.NewVector3(0,1,0)
+////////////////////////////////////////////////////////
+	mat4 := new(m.Matrix4)
+	//v3 := new(m.Vector3)
+	ModelMatrix := mat4.Identity()
+	ViewMatrix    := mat4.LookAt(cameraPos,LookAtOrigin,HeadisUp)
+	ProjectMatrix := mat4.MakePerspective(45.0,config.WindowWidth/config.WindowHeight,0.01,1000.0)
+
+	//MV := m.MultiplyMatrices(ModelMatrix,ViewMatrix)
+	VP := mat4.MultiplyMatrices(ProjectMatrix,ViewMatrix)
+	MVP:= mat4.MultiplyMatrices(VP,ModelMatrix)
+
+	//println(ModelMatrix[0],ModelMatrix[1],ModelMatrix[2])
+
+    println(MVP[0],MVP[1],MVP[2])
 	//窗口的引用会被用在一个 for 循环中，只要窗口处于打开的状态，就执行某些事情。
 	for !window.ShouldClose() {
 		//draw(window, program)
-		draw(vao,window, program)
+		draw(vao,window, program,MatrixID,&MVP[0])
+
 		update()
+
 	}
 }
 
-
 func update(){
-    fmt.Println("xxx")
+    //fmt.Println("xxx")
 }
 
 func initGlfw() *glfw.Window {
@@ -89,15 +114,23 @@ func initOpenGL() uint32 {
 	gl.AttachShader(prog, fragmentShader)
 
 	gl.LinkProgram(prog) //--> bind program
+
 	return prog
 }
 
 //你应该注意到了现在我们有 program 的引用，在我们的窗口循环中，
 //调用新的 draw 函数。最终这个函数会绘制出所有细胞，让游戏状态变得可视化，
 //但是现在它做的仅仅是清除窗口，所以我们只能看到一个全黑的屏幕：
-func draw(vao uint32 , window *glfw.Window, program uint32) {
+func draw(vao uint32 , window *glfw.Window, program uint32,MatrixID int32,add *float32) {
+
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT) //--> clean last frame
 	gl.UseProgram(program)
+
+
+
+	// Send our transformation to the currently bound shader,
+	// in the "MVP" uniform
+	gl.UniformMatrix4fv(MatrixID, 1,false, add);
 
 	gl.BindVertexArray(vao)
 	//然后我们把 OpenGL 绑定到 vao 上，这样当我们告诉 OpenGL 三角形切片的顶点数（除以 3，是因为每一个点有 X、Y、Z 坐标），让它去 DrawArrays ，它就知道要画多少个顶点了。
